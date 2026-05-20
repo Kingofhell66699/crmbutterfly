@@ -1,0 +1,1 @@
+ALTER TYPE interested_status ADD VALUE 'wrong_info';

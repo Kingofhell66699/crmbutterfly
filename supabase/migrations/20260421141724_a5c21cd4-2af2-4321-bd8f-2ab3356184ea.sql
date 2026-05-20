@@ -1,0 +1,2 @@
+CREATE UNIQUE INDEX IF NOT EXISTS leads_phone_unique_idx ON public.leads (phone) WHERE phone IS NOT NULL AND phone <> '';
+CREATE UNIQUE INDEX IF NOT EXISTS leads_email_unique_idx ON public.leads (lower(email)) WHERE email IS NOT NULL AND email <> '';

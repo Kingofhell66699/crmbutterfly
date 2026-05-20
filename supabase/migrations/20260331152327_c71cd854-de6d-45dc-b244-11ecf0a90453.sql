@@ -1,0 +1,1 @@
+UPDATE partner_api_keys SET is_active = true WHERE id = 'cf71a0d9-27eb-477c-9300-bd707d9b17b1';

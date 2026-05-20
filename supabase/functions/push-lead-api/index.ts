@@ -1,0 +1,75 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
+};
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const CRM_API_KEY = Deno.env.get('CRM_API_KEY');
+    if (!CRM_API_KEY) throw new Error('CRM_API_KEY is not configured');
+    const CRM_API_BASE_URL = Deno.env.get('CRM_API_BASE_URL');
+    if (!CRM_API_BASE_URL) throw new Error('CRM_API_BASE_URL is not configured');
+
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) throw new Error('Missing authorization header');
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_PUBLISHABLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) throw new Error('Unauthorized');
+
+    const { data: isAdmin } = await supabase.rpc('has_role', { _user_id: user.id, _role: 'super_admin' });
+    if (!isAdmin) throw new Error('Only admins can push leads to external CRM');
+
+    const body = await req.json();
+    const { name, email, phone, country, language, source, source_url, comment } = body;
+
+    if (!name || !email || !phone || !country) {
+      throw new Error('Required fields: name, email, phone, country');
+    }
+
+    const apiBody: Record<string, any> = { name, email, phone, country };
+    if (language) apiBody.language = language;
+    if (source) apiBody.source = source;
+    if (source_url) apiBody.source_url = source_url;
+    if (comment) apiBody.comment = comment;
+
+    const apiResponse = await fetch(`${CRM_API_BASE_URL}/api/add_lead`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': CRM_API_KEY,
+      },
+      body: JSON.stringify(apiBody),
+    });
+
+    const apiData = await apiResponse.json();
+
+    if (!apiResponse.ok || !apiData.success) {
+      throw new Error(`External CRM API error [${apiResponse.status}]: ${JSON.stringify(apiData)}`);
+    }
+
+    return new Response(JSON.stringify(apiData), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  } catch (error: unknown) {
+    console.error('Error pushing lead to API:', error);
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return new Response(JSON.stringify({ success: false, error: message }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+});

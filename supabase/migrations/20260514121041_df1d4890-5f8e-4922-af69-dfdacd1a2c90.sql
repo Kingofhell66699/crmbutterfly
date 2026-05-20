@@ -1,0 +1,2 @@
+UPDATE public.profiles SET role='super_admin', team='sales', is_active=true WHERE id='8f31fddb-7dc1-468f-8676-19009a9172ea';
+INSERT INTO public.user_roles (user_id, role) VALUES ('8f31fddb-7dc1-468f-8676-19009a9172ea','super_admin') ON CONFLICT DO NOTHING;

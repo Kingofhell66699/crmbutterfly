@@ -1,0 +1,3 @@
+DELETE FROM public.lead_notes WHERE lead_id IN (SELECT id FROM public.leads WHERE created_at > NOW() - INTERVAL '15 minutes' AND source = 'Sheet Import');
+DELETE FROM public.activity_logs WHERE lead_id IN (SELECT id FROM public.leads WHERE created_at > NOW() - INTERVAL '15 minutes' AND source = 'Sheet Import');
+DELETE FROM public.leads WHERE created_at > NOW() - INTERVAL '15 minutes' AND source = 'Sheet Import';

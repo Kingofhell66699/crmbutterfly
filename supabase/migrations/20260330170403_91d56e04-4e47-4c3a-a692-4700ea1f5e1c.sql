@@ -1,0 +1,1 @@
+ALTER TYPE public.interested_status ADD VALUE IF NOT EXISTS 'not_called';
