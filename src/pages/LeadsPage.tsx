@@ -41,7 +41,7 @@ export default function LeadsPage() {
   const { toast } = useToast();
 
   // Filters persisted in sessionStorage via usePersisted
-  const [search] = useState('');
+  const [search, setSearch] = usePersisted('search', '');
   const [searchName, setSearchName] = usePersisted('searchName', '');
   const [searchCountry, setSearchCountry] = usePersisted('searchCountry', '');
   const [searchPhone, setSearchPhone] = usePersisted('searchPhone', '');
@@ -360,7 +360,7 @@ export default function LeadsPage() {
           <div className="flex gap-2 flex-wrap items-center">
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <Input className="h-9 pl-8 w-52 text-sm rounded-lg" placeholder="Search name, phone, email..." value={searchName} onChange={e => { setSearchName(e.target.value); setPage(0); }} />
+              <Input className="h-9 pl-8 w-52 text-sm rounded-lg" placeholder="Search name, phone, email..." value={search} onChange={e => { setSearch(e.target.value); setPage(0); }} />
             </div>
             <Select value={statusFilter} onValueChange={v => { setStatusFilter(v); setPage(0); }}>
               <SelectTrigger className="h-9 w-36 text-sm rounded-lg"><SelectValue placeholder="Status" /></SelectTrigger>
@@ -411,8 +411,8 @@ export default function LeadsPage() {
                 <SelectItem value="follow_up">Follow-up Date</SelectItem>
               </SelectContent>
             </Select>
-            {(statusFilter !== 'all' || teamFilter !== 'all' || sourceFilter !== 'all' || agentFilter !== 'all' || countryFilter !== 'all' || searchName) && (
-              <button onClick={() => { setStatusFilter('all'); setTeamFilter('all'); setSourceFilter('all'); setAgentFilter('all'); setCountryFilter('all'); setSearchName(''); setPage(0); }} className="h-9 px-3 text-xs text-muted-foreground hover:text-foreground border border-dashed border-border rounded-lg flex items-center gap-1">
+            {(statusFilter !== 'all' || teamFilter !== 'all' || sourceFilter !== 'all' || agentFilter !== 'all' || countryFilter !== 'all' || searchName || search) && (
+              <button onClick={() => { setStatusFilter('all'); setTeamFilter('all'); setSourceFilter('all'); setAgentFilter('all'); setCountryFilter('all'); setSearchName(''); setSearch(''); setPage(0); }} className="h-9 px-3 text-xs text-muted-foreground hover:text-foreground border border-dashed border-border rounded-lg flex items-center gap-1">
                 <X className="h-3 w-3" /> Clear
               </button>
             )}
