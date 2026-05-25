@@ -17,6 +17,23 @@ import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, ArrowRight, Clock, User, MessageSquare, ArrowRightLeft, Calendar } from 'lucide-react';
 import { Constants } from '@/integrations/supabase/types';
 
+// Controlled input that saves on blur OR when Enter is pressed
+function CallbackNoteInput({ value, onSave }: { value: string; onSave: (v: string) => void }) {
+  const [local, setLocal] = useState(value);
+  // Sync if lead reloads
+  useState(() => { setLocal(value); });
+  return (
+    <Input
+      placeholder="What to discuss on callback..."
+      className="h-9"
+      value={local}
+      onChange={e => setLocal(e.target.value)}
+      onBlur={() => { if (local !== value) onSave(local); }}
+      onKeyDown={e => { if (e.key === 'Enter') { e.currentTarget.blur(); } }}
+    />
+  );
+}
+
 export default function LeadDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -223,7 +240,13 @@ export default function LeadDetailPage() {
                       type="datetime-local"
                       className="h-9"
                       value={lead.next_follow_up_date ? new Date(lead.next_follow_up_date).toISOString().slice(0,16) : ''}
-                      onChange={e => updateLeadMutation.mutate({ next_follow_up_date: e.target.value || null })}
+                      onChange={e => {
+                        // Convert local datetime to proper ISO string with timezone
+                        const val = e.target.value;
+                        if (!val) { updateLeadMutation.mutate({ next_follow_up_date: null }); return; }
+                        const iso = new Date(val).toISOString();
+                        updateLeadMutation.mutate({ next_follow_up_date: iso });
+                      }}
                     />
                     {lead.next_follow_up_date && (
                       <p className={`text-xs mt-1 ${new Date(lead.next_follow_up_date) < new Date() ? 'text-red-400' : 'text-primary'}`}>
@@ -233,11 +256,9 @@ export default function LeadDetailPage() {
                   </div>
                   <div>
                     <Label className="text-xs text-muted-foreground mb-1.5 block">Callback Note</Label>
-                    <Input
-                      placeholder="What to discuss on callback..."
-                      className="h-9"
-                      defaultValue={(lead as any).callback_note ?? ''}
-                      onBlur={e => { if (e.target.value !== ((lead as any).callback_note ?? '')) updateLeadMutation.mutate({ callback_note: e.target.value || null }); }}
+                    <CallbackNoteInput
+                      value={(lead as any).callback_note ?? ''}
+                      onSave={val => updateLeadMutation.mutate({ callback_note: val || null })}
                     />
                   </div>
                   {isAdmin && (
